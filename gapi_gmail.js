@@ -11,22 +11,31 @@ prompt=none&\
 client_id=490889127063-6c713lt00uv202226jk4u8cms4dl0btb.apps.googleusercontent.com";
 //"client_secret=doxlEdXMobgE35xDKRIrQ7QW";
 
-var _ACCESS_TOKEN_ = GM_getValue("_ACCESS_TOKEN_", false);
+Persistentor.key = "_ACCESS_TOKEN_";
+var _ACCESS_TOKEN_ = Persistentor.GetPersistObjAttr("value");
 var headers = {
     "Content-Type": "application/x-www-form-urlencoded"
 };
-//if (!_ACCESS_TOKEN_) {
+if (!_ACCESS_TOKEN_) {
 	sendRequestByGM(ACCESS_TOKEN_URL, param_4_access_token_pattern, headers, _ACCESS_TOKEN_, GetReturnState);
-//} else {
+} else {
 	console.log("_ACCESS_TOKEN_:" + _ACCESS_TOKEN_);
-//}
+}
 function GetReturnState(responseText, retValue) {
 	console.log("responseText:" + responseText);
 	var params = ParseQueryStr(responseText);
 	console.log(params);
 	retValue = params['access_token'];
+	var expireTimeSpan = params["expires_in"];
+	var end_timestamp = (new Date()).getTime()/1000 + expireTimeSpan;
 	console.log("retValue:" + retValue);
-	GM_setValue("_ACCESS_TOKEN_", retValue);
+	
+	_ACCESS_TOKEN_ = retValue;
+	
+	Persistentor.key = "_ACCESS_TOKEN_";
+	Persistentor.SetPersistObjAttr("value", retValue);
+	Persistentor.SetPersistObjAttr("end_timestamp", end_timestamp);
+	Persistentor.Persist();
 }
 function ParseQueryStr(queryStr) {
 	var params = {},
@@ -42,17 +51,21 @@ function b64EncodeUnicode(str) {
         return String.fromCharCode('0x' + p1);
     }));
 }
+
 function b64DecodeUnicode(str) {
     return decodeURIComponent(Array.prototype.map.call(unsafeWindow.atob(str), function(c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
 }
-
+function MIMEEncode(email) {
+	return b64EncodeUnicode(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+	//return Base64.encodeURI(email);
+}
 // refer https://developers.google.com/apis-explorer/#search/gmail/gmail/v1/gmail.users.messages.send
 function SendEmail(email) {
 	var headers = {'Authorization':'Bearer '+_ACCESS_TOKEN_};
 	
-	var encodeRaw = b64EncodeUnicode(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+	var encodeRaw = MIMEEncode(email);
     var data = JSON.stringify({raw: encodeRaw});
 	
 	sendRequestByGM(GMAIL_API_URL, data, headers, null, null);
