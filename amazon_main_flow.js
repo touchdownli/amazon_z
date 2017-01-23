@@ -38,11 +38,11 @@ function Notify(func_name, item_title, norm_url) {
 //Notify("test_notify_func_name", "中文", "https://www.amazon.cn/dp/dfdfdf");
 
 var Z_CLICK_DELAY = 2000; // ms
-var CHECK_NEXT_PAGE_DOWNLOAD_DELAY = 2000;
+var CHECK_NEXT_PAGE_DOWNLOAD_DELAY = 1000;
 var CHECK_NEXT_PAGE_DOWNLOAD_TIMES_THRESHOLD = 50;
-var CHECK_VISIT_ITEMS_DONE_DELAY = 2000;
-var CHECK_VISIT_ITEMS_DONE_TIMES_THRESHOLD = 8;
-var AJAX_URL_TIMEOUT = 10000;
+var CHECK_VISIT_ITEMS_DONE_DELAY = 1000;
+var CHECK_VISIT_ITEMS_DONE_TIMES_THRESHOLD = 25;
+var AJAX_URL_TIMEOUT = 20000;
 var LOOP_DEL_PERSISTENT_VAL_DELAY = 300000;
 $(window).load(Start);
 //$(document).ready(function(){document.head.appendChild(script);});
@@ -136,10 +136,10 @@ function TraverseItems() {
     // do one page
     VisitItemsInOnePage(page_cnt);
     //console.log($("[data-action='gbfilter-pagination']")[0]);
-    
 }
 
 var cur_page_item_cnt = 0;
+var cur_page_org_item_cnt = 0;
 var g_total_url = 0;
 function VisitItemsInOnePage (page_cnt) {
     console.log("page_cnt:" + page_cnt);
@@ -152,31 +152,33 @@ function VisitItemsInOnePage (page_cnt) {
             XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
             null);
     cur_page_item_cnt = item_links.snapshotLength;
+	cur_page_org_item_cnt = cur_page_item_cnt;
     console.log("Items:" + cur_page_item_cnt);
-    for (var i = 0; i < cur_page_item_cnt; i++) {
-        var item_link = item_links.snapshotItem(i);
+    for (var i = 0; i < item_links.snapshotLength; i++) {
+        var item_link = item_links.snapshotItem(i).attributes.getNamedItem("href").value;
         //$.get(item_link, null, VisitItem);
         g_total_url += 1;
-        var regex = /(.*\/)[^\/]*/g;
-        var norm_url = regex.exec(item_link)[1];
-        if (Persistentor.IsKeyExist(norm_url)) {
-            // if (IsLoaded(norm_url)) {
-            console.log("Already show:" + norm_url);
-            continue;
-        }
-        AjaxUrl(norm_url);
+        VisitItemByAjax(item_link);
         // DoReq(item_link);
     }
     CheckVisitItemsDone();
 }
 
-function AjaxUrl(url_str) {
+function VisitItemByAjax(url_str) {
+	var regex = /(.*\/)[^\/]*/g;
+	var norm_url = regex.exec(url_str)[1];
+	if (Persistentor.IsKeyExist(norm_url)) {
+		console.log("Already show:" + norm_url);
+		cur_page_item_cnt -= 1;
+		return;
+	}
+	console.log("Start ajax:%s", url_str);
     $.ajax({
         url:url_str,
         type:'GET',
         timeout: AJAX_URL_TIMEOUT,
         success:function(msg){
-            VisitItem(url_str, msg);
+            VisitItem(url_str, norm_url, msg);
         },
         complete:function(xhr, status) {
             console.log("VisitItem status:" + status);
@@ -190,6 +192,7 @@ var g_visit_url = 0;
 function CheckVisitItemsDone() {
     console.log("CheckVisitItemsDone");
     console.log("Total items:%d, Visit items:%d", g_total_url, g_visit_url);
+	console.log("cur_page_org_item_cnt:%d, cur_page_item_cnt:%d", cur_page_org_item_cnt, cur_page_item_cnt);
     CheckVisitItemsDoneTimes += 1;
     if (cur_page_item_cnt === 0 || CheckVisitItemsDoneTimes === CHECK_VISIT_ITEMS_DONE_TIMES_THRESHOLD) {
         ClickNextPage();
@@ -218,7 +221,7 @@ function LoopDelPersistentVal() {
 LoopDelPersistentVal();
 
 var CHOOSE_CONDITION_FUNC = [PriceDiscount, ManJianPromote, XJianXDiscount, XPercentAlreadyOrdered, XJianJianXYuan];
-function VisitItem(url_str, data) {
+function VisitItem(url_str, norm_url, data) {
     g_visit_url += 1;
     var doc = $(data).get(0);
     // remain time
@@ -226,7 +229,7 @@ function VisitItem(url_str, data) {
     if (remain_time !== null) {
         var end_timestamp = (new Date()).getTime()/1000 + 3600 * remain_time.hour_remain + 60 * remain_time.min_remain;
                         
-        Persistentor.SetKey(url_str);
+        Persistentor.SetKey(norm_url);
         Persistentor.SetPersistObjAttr("end_timestamp", end_timestamp);
         Persistentor.Persist();
     }
@@ -278,6 +281,7 @@ function VisitItem(url_str, data) {
             return;
         }
     }
+	return;
 }
 
 function Xpath2Str(xpath, doc) {

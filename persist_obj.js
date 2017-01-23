@@ -1,6 +1,6 @@
 var PersistentObjValue = {"value":null, "end_timestamp":1};
 function SetPersistObjAttr(attr, value) {
-    PersistentObjValue[attr] = value;
+    this.PersistentObjValue[attr] = value;
 }
 function SetKey(value) {
     this.key = value;
