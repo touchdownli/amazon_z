@@ -10,7 +10,7 @@ function IsKeyExist(key) {
 }
 function Persist() {
 	var value_str = JSON.stringify(this.PersistentObjValue);
-    GM_setValue(this.key, value_str);
+  GM_setValue(this.key, value_str);
 }
 function GetPersistObjAttr(attr) {
     var value_str = GM_getValue(this.key, null);
@@ -34,7 +34,7 @@ function ExpirePersistObj() {
         var end_timestamp = this.GetPersistObjAttr("end_timestamp");
         cnt += 1;
         if (end_timestamp === undefined || end_timestamp < now) {
-			GM_deleteValue(key);
+			      GM_deleteValue(key);
             del_cnt += 1;
             console.log("delete item:%s, end_time:%s, now:%s", key, end_timestamp, now);
         }

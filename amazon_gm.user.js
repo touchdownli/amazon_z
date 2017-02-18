@@ -18,5 +18,3 @@
 // @grant    GM_xmlhttpRequest
 // @run-at   document-end
 // ==/UserScript==
-
-
