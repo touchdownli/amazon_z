@@ -4,11 +4,7 @@ var GMAIL_API_URL =
   "https://www.googleapis.com/gmail/v1/users/me/messages/send?";
 var ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
-var param_4_access_token_pattern = "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send&\
-  	redirect_uri=https%3A%2F%2Fwww.facebook.com/connect/login_success.html&\
-  	response_type=token&\
-  	prompt=none&\
-  	client_id=490889127063-6c713lt00uv202226jk4u8cms4dl0btb.apps.googleusercontent.com";
+var param_4_access_token_pattern = "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send&redirect_uri=https%3A%2F%2Fwww.facebook.com/connect/login_success.html&response_type=token&prompt=none&client_id=490889127063-6c713lt00uv202226jk4u8cms4dl0btb.apps.googleusercontent.com";
 //"client_secret=xxxx";
 
 Persistentor.key = "_ACCESS_TOKEN_";
@@ -23,7 +19,7 @@ function Timestamp2DateStr(end_timestamp) {
   return date.toString();
 }
 if (_ACCESS_TOKEN_ == null) {
-  sendRequestByGM(ACCESS_TOKEN_URL, param_4_access_token_pattern, headers, _ACCESS_TOKEN_, GetReturnState);
+  sendRequestByGM(ACCESS_TOKEN_URL, "POST", param_4_access_token_pattern, headers, _ACCESS_TOKEN_, GetReturnState);
 } else {
   console.log("_ACCESS_TOKEN_:" + _ACCESS_TOKEN_ + "\n" + "end_timestamp:" + Timestamp2DateStr(END_TIMESTAMP));
 }
@@ -72,7 +68,8 @@ function MIMEEncode(email) {
 // refer https://developers.google.com/apis-explorer/#search/gmail/gmail/v1/gmail.users.messages.send
 function SendEmail(email) {
   var headers = {
-    'Authorization' : 'Bearer ' + _ACCESS_TOKEN_
+    'Authorization' : 'Bearer ' + _ACCESS_TOKEN_,
+    'Content-type' : 'application/json'
   };
 
   var encodeRaw = MIMEEncode(email);
@@ -80,13 +77,13 @@ function SendEmail(email) {
       raw : encodeRaw
     });
 
-  sendRequestByGM(GMAIL_API_URL, data, headers, null, null);
+  sendRequestByGM(GMAIL_API_URL, "POST", data, headers, null, null);
 }
-function sendRequestByGM(url, postParam, headers, retValue, onload200CB) {
+function sendRequestByGM(url, method, postParam, headers, retValue, onload200CB) {
   console.log("postParam:")
   console.log(postParam);
   GM_xmlhttpRequest({
-    method : "POST",
+    method : method,
     url : url,
     data : postParam,
     headers : headers,
@@ -96,7 +93,7 @@ function sendRequestByGM(url, postParam, headers, retValue, onload200CB) {
         onload200CB(response.finalUrl, retValue);
       }
       // first time run for get the prompt AUTH by google
-      //unsafeWindow.open('data:text/html,' + response.responseText);
+      // unsafeWindow.open('data:text/html,' + response.responseText);
     },
     onerror : function (response) {
       console.log(response);
@@ -104,6 +101,7 @@ function sendRequestByGM(url, postParam, headers, retValue, onload200CB) {
   });
 }
 
+//----------------NOT USE-----------------because of across domain request
 function sendRequest(url, postParam, retValue, onload200CB) {
   var x = new XMLHttpRequest();
   x.open('POST', url, false);
@@ -131,12 +129,12 @@ function sendRequestByJquery(url, postParam, retValue, onload200CB) {
     dataType : "json",
     url : url,
     data : postParam,
-    type : "POST",
+    type : "GET",
     contentType : "application/x-www-form-urlencoded; charset=utf-8",
     crossDomain : true,
     cache : true,
     success : function (data) {
-      alert(data);
+      onload200CB(data, retValue);
     },
     error : function (jqXHR, exception, errorstr) {
       console.log(jqXHR);
@@ -144,3 +142,4 @@ function sendRequestByJquery(url, postParam, retValue, onload200CB) {
     }
   });
 }
+//--------NOT USE END-----

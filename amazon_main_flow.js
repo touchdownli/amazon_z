@@ -26,7 +26,8 @@ function Notify(func_name, item_title, norm_url) {
     'To: LXY<759090479@qq.com>\n' +
     'Subject: ' + item_title + '\n' +
     'Mime-Version: 1.0\n' +
-    "Content-Type: text/html; charset=\"UTF-8\"\n\n" +
+    "Content-Type: text/html; charset=\"UTF-8\"\n" +
+    "Content-Transfer-Encoding: base64\n\n" + 
 
     norm_url + "<br>" + item_title + "<br>" + func_name;
 
@@ -34,7 +35,7 @@ function Notify(func_name, item_title, norm_url) {
 }
 
 // Test Notify
-Notify("test_notify_func_name", "english", "https://www.amazon.cn/dp/dfdfdf");
+// Notify("test_notify_func_name", "english", "https://www.amazon.cn/dp/dfdfdf");
 
 var Z_CLICK_DELAY = 2000; // ms
 var CHECK_NEXT_PAGE_DOWNLOAD_DELAY = 1000;
@@ -219,15 +220,17 @@ function VisitItem(url_str, norm_url, data) {
   g_visit_url += 1;
   var doc = $(data).get(0);
   // remain time
+  var end_timestamp = (new Date()).getTime() / 1000 + 3600 * 10;
   var remain_time = GetRemainTime(doc);
   if (remain_time !== null) {
-    var end_timestamp = (new Date()).getTime() / 1000 + 3600 * remain_time.hour_remain + 60 * remain_time.min_remain;
-
-    Persistentor.SetKey(norm_url);
-    Persistentor.SetPersistObjAttr("end_timestamp", end_timestamp);
-    Persistentor.Persist();
-    console.log("Persist key:%s", norm_url);
+    end_timestamp = (new Date()).getTime() / 1000 + 3600 * remain_time.hour_remain + 60 * remain_time.min_remain;
+  } else {
+    console.log("GetRemainTime return null by " + norm_url);
   }
+  Persistentor.SetKey(norm_url);
+  Persistentor.SetPersistObjAttr("end_timestamp", end_timestamp);
+  Persistentor.Persist();
+  console.log("Persist key:%s", norm_url);
 
   var is_self_sale = IsSelfSale(doc);
   if (is_self_sale !== 0) {
