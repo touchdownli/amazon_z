@@ -23,11 +23,11 @@ function Notify(func_name, item_title, norm_url) {
   GM_notification(notificationDetails, null);
 
   var message = 'From: Amazon_SecKill<edisonbiti@gmail.com>\n' +
-    'To: LXY<759090479@qq.com>\n' +
+    'To: LXY<759090479@qq.com>;LT<42051269@qq.com>\n' +
     'Subject: ' + item_title + '\n' +
     'Mime-Version: 1.0\n' +
     "Content-Type: text/html; charset=\"UTF-8\"\n" +
-    "Content-Transfer-Encoding: base64\n\n" + 
+    "Content-Transfer-Encoding: base64\n\n" +
 
     norm_url + "<br>" + item_title + "<br>" + func_name;
 
@@ -209,12 +209,6 @@ function ClickNextPage() {
   page_cnt += 1;
 }
 
-function LoopDelPersistentVal() {
-  Persistentor.ExpirePersistObj();
-  setTimeout(LoopDelPersistentVal, LOOP_DEL_PERSISTENT_VAL_DELAY);
-}
-LoopDelPersistentVal();
-
 var CHOOSE_CONDITION_FUNC = [PriceDiscount, ManJianPromote, XJianXDiscount, XPercentAlreadyOrdered, XJianJianXYuan];
 function VisitItem(url_str, norm_url, data) {
   g_visit_url += 1;
@@ -223,14 +217,17 @@ function VisitItem(url_str, norm_url, data) {
   var end_timestamp = (new Date()).getTime() / 1000 + 3600 * 10;
   var remain_time = GetRemainTime(doc);
   if (remain_time !== null) {
-    end_timestamp = (new Date()).getTime() / 1000 + 3600 * remain_time.hour_remain + 60 * remain_time.min_remain;
+    var now = (new Date()).getTime() / 1000;
+    end_timestamp = now + 3600 * remain_time.hour_remain + 60 * remain_time.min_remain;
+    console.log("now:%s,remain_orig_str:%s,remain_hour:%s,remain_min:%s",
+      Timestamp2DateStr(now), remain_time.orig_str, remain_time.hour_remain, remain_time.min_remain);
   } else {
     console.log("GetRemainTime return null by " + norm_url);
   }
   Persistentor.SetKey(norm_url);
   Persistentor.SetPersistObjAttr("end_timestamp", end_timestamp);
   Persistentor.Persist();
-  console.log("Persist key:%s", norm_url);
+  console.log("Persist key:%s,end_timestamp:%s", norm_url, Timestamp2DateStr(end_timestamp));
 
   var is_self_sale = IsSelfSale(doc);
   if (is_self_sale !== 0) {
@@ -372,18 +369,22 @@ function GetRemainTime(doc) {
   var timer_remain_xpath = "//div[@id='goldboxBuyBox']//span[contains(@id, 'deal_expiry_timer')]";
   var timer_remains = Xpath2Str(timer_remain_xpath, doc);
   var timer_remain = timer_remains[0];
-  var regex_timer_remain = /.*([0-9]+)小时.*([0-9]+)分钟.*/g;
+  var regex_timer_remain = /[ ]*([0-9]+)小时[ ]*([0-9]+)分钟.*/g;
   var hour_min_remain = regex_timer_remain.exec(timer_remain);
-  var remain_time = {
-    "hour_remain" : 0,
-    "min_remain" : 0
-  };
+
   if (hour_min_remain === null) {
     console.log("regex exec ret null for timer_remain str %s", timer_remain);
+    return null;
   } else {
+    var remain_time = {
+      "hour_remain" : 0,
+      "min_remain" : 0,
+      "orig_str" : ""
+    };
+    remain_time.orig_str = timer_remain;
     remain_time.hour_remain = parseInt(hour_min_remain[1]);
     remain_time.min_remain = parseInt(hour_min_remain[2]);
+    return remain_time;
   }
-  return remain_time;
 }
 // -------------------------------------------------------------------------------------------------

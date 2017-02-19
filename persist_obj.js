@@ -42,3 +42,8 @@ function ExpirePersistObj() {
     console.log("Total history items:%d, del:%d", cnt, del_cnt);
 }
 var Persistentor = {PersistentObjValue, "key":null, SetPersistObjAttr, SetKey, IsKeyExist, Persist, GetPersistObjAttr, ExpirePersistObj};
+function LoopDelPersistentVal() {
+  Persistentor.ExpirePersistObj();
+  setTimeout(LoopDelPersistentVal, LOOP_DEL_PERSISTENT_VAL_DELAY);
+}
+LoopDelPersistentVal();
