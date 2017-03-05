@@ -73,6 +73,7 @@ function ClickZLink() {
   try {
     $(click_obj)[0].click();
     setTimeout(StartAfterZClick, Z_CLICK_DELAY);
+    //setTimeout(ClickSortOrder, Z_CLICK_DELAY);
   } catch (e) {
     console.log("catch except:" + e + "\nlocation to goldbox");
     // window.location = "https://www.amazon.cn/gp/goldbox/";
@@ -81,12 +82,15 @@ function ClickZLink() {
 }
 
 function ClickSortOrder() {
-  // var click_obj = Xpath2Jquery("//div[@id='a-popover-2']//a[@data-value='{\"stringVal\":\"BY_DISCOUNT_DESCENDING\"}']");
-  var click_obj = Xpath2Jquery("//div[@id='FilterItemView_sortOrder_dropdown']//option[@value='BY_DISCOUNT_DESCENDING']");
+  var click_obj_select = Xpath2Jquery("//div[@id='FilterItemView_sortOrder_dropdown']//select[@name='sortOptions']");
+  console.log("click_obj_select:%s", $(click_obj_select)[0]);
+  $(click_obj_select)[0].click();
+  var click_obj = Xpath2Jquery("//div[@class='a-popover-inner']//a[@data-value='{\"stringVal\":\"BY_DISCOUNT_DESCENDING\"}']");
   console.log($(click_obj)[0]);
+  $(click_obj)[0].click();
   // $(click_obj).attr("selected", function(i, oldvalue) {});
 
-  setTimeout(StartAfterZClick, START_AFTER_Z_CLICK_DELAY);
+  setTimeout(StartAfterZClick, Z_CLICK_DELAY);
 }
 
 var span_next_page_old;
@@ -272,7 +276,8 @@ function VisitItem(url_str, norm_url, data) {
       // window.open(url_str);
       unsafeWindow.open(url_str);
       // GM_openInTab(url_str);
-      Notify(CHOOSE_CONDITION_FUNC[j].name, item_title, url_str);
+      var notify_title = old_price + " vs " + price + " " + item_title
+      Notify(CHOOSE_CONDITION_FUNC[j].name, notify_title, url_str);
       return;
     }
   }
@@ -325,21 +330,21 @@ function GetRegexMatchStr(regex, xpath, doc) {
 }
 
 function GetOldPriceBy(doc) {
-  var regex_price = new RegExp("[^0-9\.]*([0-9\.]+).*", "g");
+  var regex_price = new RegExp("[^0-9\.]*([,0-9\.]+).*", "g");
   var old_price_xpath = "//div[@id='price']//span[@id='priceblock_ourprice']";
   var old_price = GetRegexMatchStr(regex_price, old_price_xpath, doc);
   return old_price;
 }
 
 function GetPriceBy(doc) {
-  var regex_price = new RegExp("[^0-9\.]*([0-9\.]+).*", "g");
+  var regex_price = new RegExp("[^0-9\.]*([,0-9\.]+).*", "g");
   var price_xpath = "//div[@id='price']//span[@id='priceblock_dealprice']";
   var price = GetRegexMatchStr(regex_price, price_xpath, doc);
   return price;
 }
 
 function GetPriceByBuybox(doc) {
-  var regex_price = new RegExp("[^0-9\.]*([0-9\.]+).*", "g");
+  var regex_price = new RegExp("[^0-9\.]*([,0-9\.]+).*", "g");
   var price_xpath = "//div[@id='buybox']//div[@id='buyDealSection']//div[@class='inlineBlock-display']";
   var price = GetRegexMatchStr(regex_price, price_xpath, doc);
   return price;
@@ -348,7 +353,7 @@ function GetPriceByBuybox(doc) {
 function GetOldPrice(doc) {
   var price = GetOldPriceBy(doc);
   if (price !== null) {
-    price = Number(price);
+    price = Number(price.replace(",",""));
   }
   return price;
 }
@@ -356,11 +361,11 @@ function GetOldPrice(doc) {
 function GetPrice(doc) {
   var price = GetPriceBy(doc);
   if (price !== null) {
-    return Number(price);
+    return Number(price.replace(",",""));
   }
   price = GetPriceByBuybox(doc);
   if (price !== null) {
-    price = Number(price);
+    price = Number(price.replace(",",""));
   }
   return price;
 }

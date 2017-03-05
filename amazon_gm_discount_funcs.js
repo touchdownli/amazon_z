@@ -18,15 +18,15 @@ function ManJianPromote(condition) {
 	var price = condition.price;
 	var promote_infos = condition.promote_infos;
 	
-    var regex_promote = /满([0-9]+).*减([0-9]+).*/g;
+    var regex_promote = /满([,0-9]+).*减([,0-9]+).*/g;
 	for (var i = 0; i < promote_infos.length; i++) {
         var promote_info = promote_infos[i];
 		var promote_info_match = regex_promote.exec(promote_info);
 		if (promote_info_match === null) {
 			return [false, ""];
 		}
-		var required_price = Number(promote_info_match[1]);
-		var delta = Number(promote_info_match[2]);
+		var required_price = Number(promote_info_match[1].replace(",",""));
+		var delta = Number(promote_info_match[2].replace(",",""));
 		if (old_price >= required_price * 0.5) {
 			var real_price = price - delta;
 			if (real_price <= price * DISCOUNT) {
@@ -66,7 +66,7 @@ function XJianJianXYuan(condition) {
 	var price = condition.price;
 	var promote_infos = condition.promote_infos;
 	
-    var regex_promote = /.*([0-9]+)件售价减([0-9]+)元.*/g;
+    var regex_promote = /.*([0-9]+)件售价减([,0-9]+)元.*/g;
 	for (var i = 0; i < promote_infos.length; i++) {
         var promote_info = promote_infos[i];
 		var promote_info_match = regex_promote.exec(promote_info);
@@ -74,7 +74,7 @@ function XJianJianXYuan(condition) {
 			return [false, ""];
 		}
 		var x_jian = Number(promote_info_match[1]);
-		var x_yuan = Number(promote_info_match[2]);
+		var x_yuan = Number(promote_info_match[2].replace(",",""));
 		var real_price = price - x_yuan/x_jian;
 		if (real_price <= price*DISCOUNT) {
 			return [true, real_price];
